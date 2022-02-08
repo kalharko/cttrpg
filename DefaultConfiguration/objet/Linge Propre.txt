@@ -1,0 +1,12 @@
+objet
+|
+Linge Propre
+|
+
+|
+obj_quete,fragile
+|
+
+|
+Objet de quete : $Quete du Linge Propre
+|

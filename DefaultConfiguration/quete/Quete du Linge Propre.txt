@@ -1,0 +1,12 @@
+quete
+|
+Quete du Linge Propre
+|
+Pour aventuriers expériencés!
+|
+lvl_1,diplomatie
+|
+Il va bientôt pleuvoir ! Il faut ranger le linge propre derrière l'auberge.
+|
+Objet de quete : $Linge Propre
+|

@@ -1,0 +1,12 @@
+lieux
+|
+Auberge du Poney Claqué
+|
+Le début à toute aventure
+|
+auberge,batiment
+|
+Une auberge qui accueil les aventuriers débutants. Un super lieu de rencontre aussi.
+|
+Ferme le jeudi
+|

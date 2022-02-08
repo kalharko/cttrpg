@@ -1,0 +1,12 @@
+pnj
+|
+André
+|
+Le dernier des Géants
+|
+Géant,Bon,tagtest
+|
+Son village a été réduit en cendres ! Il est le seul survivant de cette odieuse attaque. Il n'oublie pas ses qui sont ses ennemis et traite bien ses amis.
+|
+Aime les carottes
+|
