@@ -32,7 +32,7 @@ class CursesApp() :
 
         self.set_colorpairs()
 
-        self.deck_selection()
+        if not self.deck_selection() : return
         self.CURRENT = Card(self.DECKROOT)
 
         self.updatePad()
@@ -54,6 +54,8 @@ class CursesApp() :
             'list':self.list,
             'tag':self.add_tag,
             'note':self.add_note,
+            'edit':self.edit,
+            'reload':self.reload,
 
             'quit':self.quit,
             'q':self.quit,
@@ -152,9 +154,44 @@ class CursesApp() :
             self.mainwin.addstr(y, 0, cat.upper(), curses.A_BOLD)
             y += 1
             for line in os.listdir(self.DECKROOT+'/'+cat) :
-                self.mainwin.addstr(y, 2, line.rstrip('.txt'))
+                self.mainwin.addstr(y, 2, line[:-4])
                 y += 1
         self.mainwin.refresh()
+
+    def quit(self, args=None):
+        if args != 'nosave' :
+            self.CURRENT.save()
+        data.save_configuration(self)
+        self.loop = False
+
+    def edit(self, args=None):
+        if self.CURRENT.name == '' or self.CURRENT.name == None:
+            return
+        if args == '' :
+            args = self.bottom_input('Edit what ?  [name|subtitle|description]')
+
+        if args == 'name' :
+            newname = self.main_input(self.CURRENT.name).split('\n')[0]
+            os.remove(self.DECKROOT+'/'+self.CURRENT.category+'/'+self.CURRENT.name+'.txt')
+            self.NAMES.remove(self.CURRENT.name)
+            self.NAMES.append(newname)
+            self.CURRENT.name = newname
+            self.CURRENT.save()
+        elif args == 'subtitle' :
+            self.CURRENT.subtitle = self.main_input(self.CURRENT.subtitle).split('\n')[0]
+        elif args == 'description' :
+            self.CURRENT.description = self.main_input(self.CURRENT.description)
+        else :
+            return
+        self.updatePad()
+
+    def reload(self, args=None):
+        data.load_configuration(self)
+
+
+    ####################
+    # Dialogs
+
 
     def deck_selection(self):
         self.mainwin.erase()
@@ -164,6 +201,7 @@ class CursesApp() :
         self.mainwin.refresh()
 
         user_input = self.bottom_input('Chose which deck to open')
+        if user_input in self.ESCAPE : return False
         try:
             user_input = int(user_input)
         except:
@@ -182,15 +220,7 @@ class CursesApp() :
 
         self.mainwin.erase()
         self.mainwin.refresh()
-
-    def quit(self, args=None):
-        self.CURRENT.save()
-        data.save_configuration(self)
-        self.loop = False
-
-
-    ##################
-    # Dialogs
+        return True
 
     def new_card(self):
         self.CURRENT.save()
@@ -233,6 +263,8 @@ class CursesApp() :
             user_input = self.bottom_input('Tags    ("next" to skip)')
             if user_input in self.ESCAPE : return
         # description
+        self.CURRENT.description = self.main_input('')
+        self.updatePad()
 
     def new_tag(self):
         user_input = self.bottom_input('New tag name')
@@ -280,7 +312,6 @@ class CursesApp() :
                     current.save()
 
         self.TAGS.remove(user_input)
-
 
     def delete_category(self):
         user_input = self.bottom_input('Name of category to delete')
@@ -374,10 +405,8 @@ class CursesApp() :
         out = ''
         newchar = self.screen.get_wch()
         pos_cursor = 0
-        for i in range(self.bottomwin.getmaxyx()[1]) :
-            if newchar == '\n' :
-                break
-            elif type(newchar) == int :
+        while newchar != '\n' : #TODO: stop from inputing longer than window size
+            if type(newchar) == int :
                 if newchar == 263 : ## delete
                     if len(out) > 0 and pos_cursor > 0:
                         out = out[:pos_cursor-1] + out[pos_cursor:]
@@ -394,7 +423,6 @@ class CursesApp() :
                         file.write(str(type(newchar)) + '     ' + str(newchar) + '\n')
             else :
                 out = out[:pos_cursor] + newchar + out[pos_cursor:]
-                #out += newchar
                 pos_cursor += 1
 
             self.bottomwin.addstr(0, 0, out[:pos_cursor])
@@ -428,6 +456,94 @@ class CursesApp() :
         self.messagewin.hline(0,len(message), curses.ACS_HLINE, self.screenW-self.padW)
         self.messagewin.addstr(0,0, message)
         self.messagewin.refresh()
+
+    def main_input(self, og_content):
+        self.mainwin.erase()
+        self.mainwin.hline(0,0, curses.ACS_HLINE, self.screenW-self.padW)
+        self.mainwin.vline(0,0, curses.ACS_VLINE, 20)
+        self.mainwin.vline(0,self.screenW-self.padW-1 , curses.ACS_VLINE, 20)
+        self.mainwin.addch(0,0, curses.ACS_ULCORNER)
+        self.mainwin.addch(0,self.screenW-self.padW-1, curses.ACS_URCORNER)
+
+        lines = og_content.split('\n')
+        y = len(lines)-1  #cursor at end of last line
+        x = len(lines[-1])
+        for i,line in enumerate(lines) :
+            if i != y :
+                self.mainwin.addstr(i+1,1, line)
+            else :
+                self.mainwin.addstr(i+1,1, line[:x])
+                self.mainwin.addch(i+1, x+1, '_')
+                self.mainwin.addstr(i+1, x+2, line[x:])
+        self.mainwin.refresh()
+        self.message('Type "~" to exit editing mode')
+
+        newchar = self.screen.get_wch()
+        while newchar != '~' :
+            if type(newchar) == int :
+                if newchar == 263 : ## delete
+                    if len(lines[y]) > 0 and x > 0:
+                        lines[y] = lines[y][:x-1] + lines[y][x:]
+                        x -= 1
+                    elif x == 0:
+                        if len(lines[y]) + len(lines[y-1]) < self.mainwin.getmaxyx()[1] :
+                            x = len(lines[y-1])
+                            lines[y-1] += lines[y]
+                            lines[y] = None
+                            lines.remove(None)
+                            y -= 1
+                elif newchar == 260 : #left arrow
+                    x = x - 1 if x > 0 else 0
+                elif newchar == 261 : #right arrow
+                    x = x + 1 if x < len(lines[y]) else x
+                elif newchar == 259 : # up and down arrows
+                    y = y - 1 if y > 0 else 0
+                    x = x if x < len(lines[y]) else len(lines[y])
+                elif newchar == 258 :
+                    y = y + 1 if y < len(lines)-1 else y
+                    x = x if x < len(lines[y]) else len(lines[y])
+                else :
+                    with open('log.txt', 'a') as file :
+                        file.write(str(type(newchar)) + '     ' + str(newchar) + '\n')
+            else :
+                if newchar == '\n' :
+                    if x == len(lines[y]) :
+                        lines.insert(y+1, '')
+                        y += 1
+                        x = 0
+                    else :
+                        lines.insert(y+1, lines[y][x:])
+                        lines[y] = lines[y][:x]
+                        y += 1
+                        x = 0
+                else :
+                    lines[y] = lines[y][:x] + newchar + lines[y][x:]
+                    x += 1
+
+            self.mainwin.erase()
+            self.mainwin.hline(0,0, curses.ACS_HLINE, self.screenW-self.padW)
+            self.mainwin.vline(0,0, curses.ACS_VLINE, 20)
+            self.mainwin.vline(0,self.screenW-self.padW-1 , curses.ACS_VLINE, 20)
+            self.mainwin.addch(0,0, curses.ACS_ULCORNER)
+            self.mainwin.addch(0,self.screenW-self.padW-1, curses.ACS_URCORNER)
+            for i,line in enumerate(lines) :
+                if i != y :
+                    self.mainwin.addstr(i+1,1, line)
+                else :
+                    self.mainwin.addstr(i+1,1, line[:x])
+                    self.mainwin.addch(i+1, x+1, '_')
+                    self.mainwin.addstr(i+1, x+2, line[x:])
+            self.mainwin.refresh()
+
+            newchar = self.screen.get_wch()
+
+        self.mainwin.erase()
+        self.mainwin.refresh()
+        self.message('')
+        out = ''
+        for line in lines :
+            out += line + '\n'
+        return out.lstrip('\n').rstrip('\n')
 
     def updatePad(self):
         self.pad.erase()
@@ -492,10 +608,17 @@ class CursesApp() :
             "padH,W:     " + str(self.padH) + ', ' + str(self.padW)
         ]
 
-        for y,line in enumerate(to_display) :
-            if len(line) > self.screenW-self.padW :
-                line = line [:self.screenW-self.padW-3] + '...'
-            self.mainwin.addstr(y,0, line)
+        x = 1
+        y = 1
+        for line in to_display :
+            for word in line.split(' '):
+                if x + len(word) >= self.screenW-self.padW :
+                    x = 1
+                    y += 1
+                self.mainwin.addstr(y, x, word)
+                x += len(word) + 1
+            x = 1
+            y += 1
         self.mainwin.refresh()
 
     def set_colorpairs(self):
@@ -519,7 +642,7 @@ class CursesApp() :
         self.mainwin.refresh()
         self.messagewin.refresh()
         self.bottomwin.refresh()
-        self.pad.refresh()
+        self.updatePad()
 
     def log(self, message):
         with open(self.DECKROOT+'/logs.txt', 'a') as file:

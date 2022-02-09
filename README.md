@@ -18,6 +18,7 @@ This is not a database system however, no transaction logic, no undo either. Onl
 - Name completion using levenshtein distance
 - Dice roll
 - Random (encounter, loot, spell, poison ...) tables
+- Hypertext references between cards
 
 
 ## Dependencies
@@ -28,7 +29,7 @@ To install, download this github repository and get inside it :
 `git clone https://github.com/kalharko/cttrpg`  
 `cd cttrpg`
 
-To use, run the python file called `cttrpg.py` :  
+To use, run the python file called `cttrpg.py` from inside the cttrpg folder:  
  `python cttrpg.py`
 
 ## Commands
@@ -37,24 +38,25 @@ Escape commands are `quit`, `q`, `exit` and will exit the application or the dia
 
 ### Commands that are always available
 
-| Command                        | Description |
-|--------------------------------|-------------|
-| `open <card name>`             | Opens the given card name. Saves the currently opened card. |
-| `<card name>`                  | No command is a shortcut for `open`. |
-| `new [card\|tag\|category]`    | Opens the dialog for creation. |
-| `delete [card\|tag\|category]` | Opens the dialog for deletion |
-| `list`                         | Lists all the cards available to be opened. |
-| `show [category\|card\|tag]`   | Not implemented yet |
-| `colors`                       | Shows the available colors. |
-| `debug`                        | Displays informations about the application. |
+| Command                           | Description |
+|-----------------------------------|-------------|
+| `open <card name>`                | Opens the given card name. Saves the currently opened card. |
+| `<card name>`                     | No command is a shortcut for `open`. |
+| `new [card\|tag\|category]`       | Opens the dialog for creation. |
+| `delete [card\|tag\|category]`    | Opens the dialog for deletion |
+| `list`                            | Lists all the cards available to be opened. |
+| `show <card tag or category name>`| Not implemented yet |
+| `colors`                          | Shows the available colors. |
+| `debug`                           | Displays informations about the application. |
 
 
 ### Commands available when a card is opened
 
-| Command                | Description |
+| Command                              | Description |
 |------------------------|-------------|
-| `close [nosave]`       | Closes the currently opened card. Will not save if passed `nosave`|
-| `add [note\|tag]`      | Opens the dialog to add a note or a tag. |
-| `note [ \|content]`    | Shortcut for `add note`. If no `content` is give, will prompt a dialog for it.
-| `tag [ \|tagname]`     | Shortcut for `add tag`. If no `tagname` is give, will prompt a dialog for it. |
-| `remove [note\|tag]`   | Opens the dialog to remove a note or a tag. |
+| `close [nosave]`                     | Closes the currently opened card. Will not save if passed `nosave`|
+| `add [note\|tag]`                    | Opens the dialog to add a note or a tag. |
+| `note [content]`                     | Shortcut for `add note`. If no `content` is give, will prompt a dialog for it.
+| `tag [tagname]`                      | Shortcut for `add tag`. If no `tagname` is give, will prompt a dialog for it. |
+| `remove [note\|tag]`                 | Opens the dialog to remove a note or a tag from the opened card. |
+| `edit [name\|subtitle\|description]` | Opens the dialog to edit the name, subtitle or description of the opened card |
