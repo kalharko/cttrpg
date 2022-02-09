@@ -45,6 +45,7 @@ class CursesApp() :
             'open':self.open,
             'close':self.close,
             'new':self.new,
+            'delete':self.delete,
             'debug':self.debug,
             'colors':self.colordisplay,
             'refresh':self.refresh_all,
@@ -71,6 +72,8 @@ class CursesApp() :
                 self.open(user_input)
 
 
+    ################
+    # Commands
 
     def open(self, args=None):
         self.CURRENT.save()
@@ -98,6 +101,19 @@ class CursesApp() :
             self.new_tag()
         elif args == 'category' :
             self.new_category()
+        else :
+            return
+
+    def delete(self, args=None):
+        if args == '' :
+            args = self.bottom_input('Delete what ?  [card | tag | category]')
+
+        if args == 'card' :
+            self.delete_card()
+        elif args == 'tag' :
+            self.delete_tag()
+        elif args == 'category' :
+            self.delete_category()
         else :
             return
 
@@ -173,7 +189,8 @@ class CursesApp() :
         self.loop = False
 
 
-
+    ##################
+    # Dialogs
 
     def new_card(self):
         self.CURRENT.save()
@@ -218,10 +235,64 @@ class CursesApp() :
         # description
 
     def new_tag(self):
-        pass
+        user_input = self.bottom_input('New tag name')
+        if user_input in self.ESCAPE : return
+        if user_input in self.TAGS :
+            self.message('Tag "'+user_input+'" already exists')
+            return
+        self.TAGS.append(user_input)
 
     def new_category(self):
-        pass
+        user_input = self.bottom_input('New category name')
+        if user_input in self.ESCAPE : return
+        if user_input in self.CATEGORIES :
+            self.message('Category "'+user_input+'" already exists')
+            return
+        os.mkdir(self.DECKROOT+'/'+user_input)
+        self.CATEGORIES.append(user_input)
+
+    def delete_card(self):
+        user_input = self.bottom_input('Name of card to delete')
+        if user_input in self.ESCAPE : return
+        if not user_input in self.NAMES :
+            self.message('Card "'+user_input+'" not found')
+            return
+
+        for category in self.CATEGORIES :
+            if user_input in os.listdir(self.DECKROOT+'/'+category) :
+                break
+        os.remove(self.DECKROOT+'/'+category+'/'+user_input+'.txt')
+        self.NAMES.remove(user_input)
+
+    def delete_tag(self):
+        user_input = self.bottom_input('Name of tag to delete')
+        if user_input in self.ESCAPE : return
+        if not user_input in self.TAGS :
+            self.message('Tag "'+user_input+'" not found')
+            return
+
+        current = Card(self.DECKROOT)
+        for category in self.CATEGORIES :
+            for card in os.listdir(self.DECKROOT+'/'+category) :
+                current.open(self.DECKROOT+'/'+category+'/'+card)
+                if user_input in current.tags :
+                    current.tags.remove(user_input)
+                    current.save()
+
+        self.TAGS.remove(user_input)
+
+
+    def delete_category(self):
+        user_input = self.bottom_input('Name of category to delete')
+        if user_input in self.ESCAPE : return
+        if not user_input in self.CATEGORIES :
+            self.message('Category "'+user_input+'" not found')
+            return
+
+        # TODO: show(category:user_input)
+        if self.YNquestion('Are you sure about deleting this category ?', default=False) :
+            shutil.rmtree(self.DECKROOT+'/'+user_input)
+            self.CATEGORIES.remove(user_input)
 
     def add_note(self, args=''):
         if args == '' :
@@ -290,6 +361,8 @@ class CursesApp() :
         self.updatePad()
 
 
+    ####################################
+    # Display and miscelaneous functions
 
     def bottom_input(self, message=None):
         # message

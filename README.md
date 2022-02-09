@@ -3,24 +3,33 @@
 #### *Console Table Top Role Playing Game*
 A ncurses application to take notes for your table top rpg games. Notes are written on "cards", organized in "decks". A sample deck is available to explore.
 
+This is not a database system however, no transaction logic, no undo either. Only direct editing of .txt files.
+
 ## **Known Problems**
 - Only runs on linux for the moment
 - Tags not implemented
 - No way to add a description to a card yet
+- Default configuration and sample deck are written in french, more language support to come
+- Uncommented code :anxious_grin:
 
 ## **Planed features**
 - More actions with tags
 - Color assignment to tags, color themes
 - Name completion using levenshtein distance
 - Dice roll
-- Random encounter tables
+- Random (encounter, loot, spell, poison ...) tables
 
 
 ## Dependencies
 Python3
 
-## Install
-Download this github repository, get inside it and run `python cttrpg.py`
+## Usage
+To install, download this github repository and get inside it :  
+`git clone https://github.com/kalharko/cttrpg`  
+`cd cttrpg`
+
+To use, run the python file called `cttrpg.py` :  
+ `python cttrpg.py`
 
 ## Commands
 

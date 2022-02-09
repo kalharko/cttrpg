@@ -35,10 +35,9 @@ def load_configuration(obj):
 
     # names
     obj.NAMES = []
-    for cat in os.listdir() :
-        if cat in obj.CATEGORIES :
-            for name in os.listdir(cat) :
-                obj.NAMES.append(name.rstrip('.txt'))
+    for cat in obj.CATEGORIES :
+        for name in os.listdir(obj.DECKROOT+'/'+cat) :
+            obj.NAMES.append(name.rstrip('.txt'))
 
 def save_configuration(obj):
     out = '#Configuration file for cttrpg\n#can be edited here or in the cttrpg program\n\n'
