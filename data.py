@@ -16,7 +16,8 @@ def load_configuration(obj):
 
     with open(obj.DECKROOT+'/deck.conf', 'r') as file :
         obj.CATEGORIES = []
-        obj.TAGS = []
+        obj.TAGS = {}
+        obj.COLORS = []
         skips = 0
         for line in file.readlines() :
             line = line.rstrip('\n')
@@ -26,7 +27,9 @@ def load_configuration(obj):
                 if skips == 1:
                     obj.CATEGORIES.append(line)
                 elif skips == 2:
-                    obj.TAGS.append(line)
+                    obj.TAGS[line.split(':')[0]] = int(line.split(':')[1])
+                elif skips == 3:
+                    obj.COLORS.append((int(line.split(',')[0]), int(line.split(',')[1])))
 
     # check for sanity of configuration
     for category in obj.CATEGORIES :
@@ -46,8 +49,12 @@ def save_configuration(obj):
         out += category + '\n'
 
     out += '\n#Tags\n|\n'
-    for tag in obj.TAGS :
-        out += tag + '\n'
+    for tag,colorpair in obj.TAGS.items() :
+        out += tag+':'+str(colorpair) + '\n'
+
+    out += '\n#Colors (background,text)\n|\n'
+    for color in obj.COLORS :
+        out += str(color[0])+','+str(color[1]) + '\n'
 
     with open(obj.DECKROOT+'/deck.conf', 'w') as file :
         file.write(out)

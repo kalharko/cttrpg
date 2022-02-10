@@ -30,14 +30,13 @@ class CursesApp() :
         self.messagewin.hline(0,0, curses.ACS_HLINE ,self.screenW-self.padW)
         self.messagewin.refresh()
 
-        self.set_colorpairs()
-
         if not self.deck_selection() : return
         self.CURRENT = Card(self.DECKROOT)
 
         self.updatePad()
         self.clear_logs()
         data.load_configuration(self)
+        self.set_colorpairs()
         self.mainLoop()
 
     def mainLoop(self):
@@ -95,7 +94,7 @@ class CursesApp() :
 
     def new(self, args=None):
         if args == '' :
-            args = self.bottom_input('New what ?  [card | tag | category]')
+            args = self.bottom_input('New what ?  [card | tag | category | color]')
 
         if args == 'card' :
             self.new_card()
@@ -103,6 +102,8 @@ class CursesApp() :
             self.new_tag()
         elif args == 'category' :
             self.new_category()
+        elif args == 'color' :
+            self.new_color()
         else :
             return
 
@@ -147,16 +148,12 @@ class CursesApp() :
             return
 
     def list(self, args=None):
-        self.mainwin.erase()
-        y = 0
-        for cat in self.CATEGORIES :
-            y += 1
-            self.mainwin.addstr(y, 0, cat.upper(), curses.A_BOLD)
-            y += 1
-            for line in os.listdir(self.DECKROOT+'/'+cat) :
-                self.mainwin.addstr(y, 2, line[:-4])
-                y += 1
-        self.mainwin.refresh()
+        if args == '' or args == 'category':
+            self.list_categories()
+        elif args == 'tag':
+            self.list_tags()
+        else :
+            return
 
     def quit(self, args=None):
         if args != 'nosave' :
@@ -192,6 +189,41 @@ class CursesApp() :
     ####################
     # Dialogs
 
+
+    def list_categories(self):
+        self.mainwin.erase()
+        y = 0
+        for category in self.CATEGORIES :
+            y += 1
+            self.mainwin.addstr(y, 0, category.upper(), curses.A_BOLD)
+            y += 1
+            for line in os.listdir(self.DECKROOT+'/'+category) :
+                self.mainwin.addstr(y, 2, line[:-4])
+                y += 1
+        self.mainwin.refresh()
+
+    def list_tags(self):
+        self.mainwin.erase()
+        index = {}
+        for tag in self.TAGS :
+            index[tag] = []
+
+        current = Card(self.DECKROOT)
+        for category in self.CATEGORIES :
+            for card in os.listdir(self.DECKROOT+'/'+category) :
+                current.open(self.DECKROOT+'/'+category+'/'+card)
+                for tag in current.tags:
+                    index[tag].append(current.name)
+
+        y = 0
+        for tag in index.keys() :
+            y += 1
+            self.mainwin.addstr(y, 0, tag, curses.A_BOLD | curses.color_pair(self.TAGS[tag]))
+            y += 1
+            for name in index[tag] :
+                self.mainwin.addstr(y, 2, name)
+                y += 1
+        self.mainwin.refresh()
 
     def deck_selection(self):
         self.mainwin.erase()
@@ -253,9 +285,9 @@ class CursesApp() :
         user_input = self.bottom_input('Tags    ("next" to skip)')
         if user_input in self.ESCAPE : return
         while user_input != 'next' :
-            if not user_input in self.TAGS :
+            if not user_input in self.TAGS.keys() :
                 if self.YNquestion(f'Créer nouveau tag "{user_input}" ?', default=True) :
-                    self.TAGS.append(user_input)
+                    self.TAGS[user_input] = 0
                     self.CURRENT.tags.append(user_input)
             else :
                 self.CURRENT.tags.append(user_input)
@@ -269,10 +301,23 @@ class CursesApp() :
     def new_tag(self):
         user_input = self.bottom_input('New tag name')
         if user_input in self.ESCAPE : return
-        if user_input in self.TAGS :
+        if user_input in self.TAGS.keys() :
             self.message('Tag "'+user_input+'" already exists')
             return
-        self.TAGS.append(user_input)
+        newtag = user_input
+
+        self.colordisplay()
+        user_input = self.bottom_input('Chose an available color pair')
+        if user_input in self.ESCAPE : return
+        try :
+            user_input = int(user_input)
+        except :
+            self.mainwin.clear()
+            self.mainwin.refresh()
+            self.message('Invalid input')
+            return
+
+        self.TAGS[newtag] = user_input
 
     def new_category(self):
         user_input = self.bottom_input('New category name')
@@ -282,6 +327,41 @@ class CursesApp() :
             return
         os.mkdir(self.DECKROOT+'/'+user_input)
         self.CATEGORIES.append(user_input)
+
+    def new_color(self):
+        self.mainwin.clear()
+
+        for i in range(255):
+            if i in [0, 16, 17, 52, 232, 233, 234, 235] :
+                curses.init_pair(i+1, 255, i)
+            else :
+                curses.init_pair(i+1, 0, i)
+        i = 1
+        for y in range(17):
+            for x in range(15):
+                for suby in range(1):
+                    self.mainwin.addstr(y*2, x*6, '.'+str(i)+('.'*(4-len(str(i)))), curses.color_pair(i))
+                i += 1
+        self.mainwin.refresh()
+
+        user_input = self.bottom_input('Select a pair of color, separated by a comma : text,background')
+        if not ',' in user_input or user_input in self.ESCAPE:
+            self.mainwin.erase()
+            self.mainwin.refresh()
+            self.message('Invalid input')
+            return
+
+        try :
+            c1 = int(user_input.split(',')[0])
+            c2 = int(user_input.split(',')[1])
+        except :
+            self.mainwin.erase()
+            self.mainwin.refresh()
+            self.message('Invalid input')
+            return
+
+        self.COLORS.append((c1,c2))
+        self.set_colorpairs()
 
     def delete_card(self):
         user_input = self.bottom_input('Name of card to delete')
@@ -299,7 +379,7 @@ class CursesApp() :
     def delete_tag(self):
         user_input = self.bottom_input('Name of tag to delete')
         if user_input in self.ESCAPE : return
-        if not user_input in self.TAGS :
+        if not user_input in self.TAGS.keys() :
             self.message('Tag "'+user_input+'" not found')
             return
 
@@ -311,7 +391,7 @@ class CursesApp() :
                     current.tags.remove(user_input)
                     current.save()
 
-        self.TAGS.remove(user_input)
+        self.TAGS.pop(user_input)
 
     def delete_category(self):
         user_input = self.bottom_input('Name of category to delete')
@@ -339,9 +419,9 @@ class CursesApp() :
 
         for tag in args.split(' ') :
             if tag in self.ESCAPE : return
-            if not tag in self.TAGS :
+            if not tag in self.TAGS.keys() :
                 if self.YNquestion(f'Créer nouveau tag "{tag}" ?', default=True) :
-                    self.TAGS.append(tag)
+                    self.TAGS[tag] = 0
                     self.CURRENT.tags.append(tag)
             else :
                 self.CURRENT.tags.append(tag)
@@ -564,7 +644,7 @@ class CursesApp() :
         y = 5
         x = 1
         for i,tag in enumerate(self.CURRENT.tags) :
-            self.pad.addstr(y, x, tag, curses.color_pair(8))
+            self.pad.addstr(y, x, tag, curses.color_pair(self.TAGS[tag]))
             x += len(tag) + 1
             if x + len(self.CURRENT.tags[i]) > self.padW :
                 x = 1
@@ -622,11 +702,9 @@ class CursesApp() :
         self.mainwin.refresh()
 
     def set_colorpairs(self):
-        i = 1
-        for y in range(0,8):
-            for x in range(0,8):
-                curses.init_pair(i, x, y)
-                i += 1
+        for i,pair in enumerate(self.COLORS) :
+            self.log(f'set color pair : {i+1}, {pair[0]}, {pair[1]}')
+            curses.init_pair(i+1, pair[0], pair[1])
 
     def colordisplay(self, args=None):
         self.mainwin.clear()
@@ -635,7 +713,9 @@ class CursesApp() :
             for x in range(8):
                 self.mainwin.addstr(y*5, x*5, ' '+str(i)+' ', curses.color_pair(i))
                 i += 1
-        self.mainwin.refresh()
+                if i > len(self.COLORS) :
+                    self.mainwin.refresh()
+                    return
 
     def refresh_all(self, args=None):
         self.screen.refresh()

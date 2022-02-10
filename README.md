@@ -42,12 +42,13 @@ Escape commands are `quit`, `q`, `exit` and will exit the application or the dia
 |-----------------------------------|-------------|
 | `open <card name>`                | Opens the given card name. Saves the currently opened card. |
 | `<card name>`                     | No command is a shortcut for `open`. |
-| `new [card\|tag\|category]`       | Opens the dialog for creation. |
+| `new [card\|tag\|category\|color]`| Opens the dialog for creation. |
 | `delete [card\|tag\|category]`    | Opens the dialog for deletion |
-| `list`                            | Lists all the cards available to be opened. |
+| `list [tag\|category]`            | Lists all the cards available to be opened ordered by tag or category, category by default.|
 | `show <card tag or category name>`| Not implemented yet |
 | `colors`                          | Shows the available colors. |
 | `debug`                           | Displays informations about the application. |
+| `reload`                          | Reloads the deck's configuration file. |
 
 
 ### Commands available when a card is opened

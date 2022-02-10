@@ -4,9 +4,11 @@ André
 |
 Le dernier des Géants
 |
-Géant,tagtest
+Géant,fragile,lvl_1
 |
-Son village a été réduit en cendres ! Il est le seul survivant de cette odieuse attaque. Il n'oublie pas ses qui sont ses ennemis et traite bien ses amis.
+Son village a été réduit en cendres !
+Il est le seul survivant de cette odieuse attaque.
+Il n'oublie pas ses qui sont ses ennemis et traite bien ses amis.
 |
 Aime les carottes
 |
