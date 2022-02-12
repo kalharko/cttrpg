@@ -69,3 +69,12 @@ Escape commands are `quit`, `q`, `exit` and will exit the application or the dia
 | `tag [tagname]`                      | Shortcut for `add tag`. If no `tagname` is give, will prompt a dialog for it. |
 | `remove [note\|tag]`                 | Opens the dialog to remove a note or a tag from the opened card. |
 | `edit [name\|subtitle\|description]` | Opens the dialog to edit the name, subtitle or description of the opened card |
+
+
+### Shortcuts
+| Shortcut    | Equivalent |
+|-------------|------------|
+| `ls`        | `list`     |
+| `del`       | `delete`   |
+| `cat`       | `category` |
+| `sub`       | `subtitle` |

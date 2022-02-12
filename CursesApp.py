@@ -56,6 +56,9 @@ class CursesApp() :
             'edit':self.edit,
             'reload':self.reload,
 
+            'ls':self.list,
+            'del':self.delete,
+
             'quit':self.quit,
             'q':self.quit,
             'exit':self.quit
@@ -100,7 +103,7 @@ class CursesApp() :
             self.new_card()
         elif args == 'tag' :
             self.new_tag()
-        elif args == 'category' :
+        elif args == 'category' or args == 'cat':
             self.new_category()
         elif args == 'color' :
             self.new_color()
@@ -115,7 +118,7 @@ class CursesApp() :
             self.delete_card()
         elif args == 'tag' :
             self.delete_tag()
-        elif args == 'category' :
+        elif args == 'category' or args == 'cat':
             self.delete_category()
         else :
             return
@@ -148,7 +151,7 @@ class CursesApp() :
             return
 
     def list(self, args=None):
-        if args == '' or args == 'category':
+        if args int ['', 'category', 'cat']:
             self.list_categories()
         elif args == 'tag':
             self.list_tags()
@@ -174,7 +177,7 @@ class CursesApp() :
             self.NAMES.append(newname)
             self.CURRENT.name = newname
             self.CURRENT.save()
-        elif args == 'subtitle' :
+        elif args in ['subtitle', 'sub']:
             self.CURRENT.subtitle = self.main_input(self.CURRENT.subtitle).split('\n')[0]
         elif args == 'description' :
             self.CURRENT.description = self.main_input(self.CURRENT.description)
