@@ -57,6 +57,7 @@ class CursesApp() :
             'reload':self.reload,
 
             'ls':self.list,
+            'rm':self.remove,
             'del':self.delete,
 
             'quit':self.quit,

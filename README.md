@@ -75,6 +75,7 @@ Escape commands are `quit`, `q`, `exit` and will exit the application or the dia
 | Shortcut    | Equivalent |
 |-------------|------------|
 | `ls`        | `list`     |
+| `rm`        | `remove`   |
 | `del`       | `delete`   |
 | `cat`       | `category` |
 | `sub`       | `subtitle` |
