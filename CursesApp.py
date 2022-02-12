@@ -336,7 +336,7 @@ class CursesApp() :
                 curses.init_pair(i+1, 255, i)
             else :
                 curses.init_pair(i+1, 0, i)
-        i = 1
+        i = 0
         for y in range(17):
             for x in range(15):
                 for suby in range(1):
@@ -731,25 +731,3 @@ class CursesApp() :
     def clear_logs(self):
         with open(self.DECKROOT + '/logs.txt', 'w') as file:
             file.write('Logs cttrpg : ' + str(datetime.now()).split(' ')[0] + '\n')
-
-
-
-
-"""
-Wanted commands :
-show [tag|category]
-new [card|tag]      not ok
-None [name of card] ok
-open [name of card] ok
-update [entry]
-overwrite [entry]
-close               ok
-quit                ok
-$[href]
-tabulation
-levenstein distance
-"""
-
-"""
-
-"""
