@@ -84,6 +84,11 @@ class Card():
     def getPath(self):
         return self.deckroot +'/'+ self.category +'/'+ self.name + '.txt'
 
+    def reload(self):
+        path = self.getPath()
+        self.set_as_new()
+        self.open(path)
+
 
 
     def __str__(self):

@@ -113,7 +113,10 @@ class CursesApp() :
 
     def delete(self, args=None):
         if args == '' :
-            args = self.bottom_input('Delete what ?  [card | tag | category]')
+            args = self.bottom_input('Delete what ?  [card|tag|category|color]')
+
+        pass_on_args = args[len(args.split(' ')[0])+1:]
+        args = args.split(' ')[0]
 
         if args == 'card' :
             self.delete_card()
@@ -121,6 +124,8 @@ class CursesApp() :
             self.delete_tag()
         elif args == 'category' or args == 'cat':
             self.delete_category()
+        elif args == 'color':
+            self.delete_color(pass_on_args)
         else :
             return
 
@@ -152,7 +157,7 @@ class CursesApp() :
             return
 
     def list(self, args=None):
-        if args int ['', 'category', 'cat']:
+        if args in ['', 'category', 'cat']:
             self.list_categories()
         elif args == 'tag':
             self.list_tags()
@@ -166,10 +171,16 @@ class CursesApp() :
         self.loop = False
 
     def edit(self, args=None):
+        self.CURRENT.save()
+
         if self.CURRENT.name == '' or self.CURRENT.name == None:
             return
         if args == '' :
-            args = self.bottom_input('Edit what ?  [name|subtitle|description]')
+            args = self.bottom_input('Edit what ?  [name|subtitle|description|tag]')
+            if args in self.ESCAPE : return
+
+        pass_on_args = args[len(args.split(' ')[0])+1:]
+        args = args.split(' ')[0]
 
         if args == 'name' :
             newname = self.main_input(self.CURRENT.name).split('\n')[0]
@@ -182,12 +193,30 @@ class CursesApp() :
             self.CURRENT.subtitle = self.main_input(self.CURRENT.subtitle).split('\n')[0]
         elif args == 'description' :
             self.CURRENT.description = self.main_input(self.CURRENT.description)
+        elif args == 'tag' :
+            user_input = pass_on_args.split(' ')[0]
+            pass_on_args = pass_on_args[len(pass_on_args.split(' ')[0])+1:]
+            if user_input == '' :
+                user_input = self.bottom_input('Edit what from tag ? [name|color|both]')
+                if user_input in self.ESCAPE : return
+            if user_input == 'name' :
+                self.edit_tag_name(pass_on_args)
+            elif user_input == 'color' :
+                self.edit_tag_color(pass_on_args)
+            elif user_input == 'both' :
+                self.edit_tag_name(pass_on_args)
+                self.edit_tag_color(pass_on_args)
+
         else :
             return
+
+        self.CURRENT.reload()
         self.updatePad()
 
     def reload(self, args=None):
         data.load_configuration(self)
+        self.set_colorpairs()
+        self.refresh_all()
 
 
     ####################
@@ -220,13 +249,23 @@ class CursesApp() :
                     index[tag].append(current.name)
 
         y = 0
+        x = 0
+        maxlen = 5
         for tag in index.keys() :
+            if y + len(index[tag])+2 > self.screenH-2 :
+                y = 0
+                x = maxlen + 3
+                maxlen = 0
+
             y += 1
-            self.mainwin.addstr(y, 0, tag, curses.A_BOLD | curses.color_pair(self.TAGS[tag]))
+            self.mainwin.addstr(y, x, tag, curses.A_BOLD | curses.color_pair(self.TAGS[tag]))
+            if len(tag) > maxlen : maxlen = len(tag)
             y += 1
             for name in index[tag] :
-                self.mainwin.addstr(y, 2, name)
+                self.mainwin.addstr(y, x + 2, name)
                 y += 1
+                if len(name)+2 > maxlen : maxlen = len(name)+2
+
         self.mainwin.refresh()
 
     def deck_selection(self):
@@ -340,11 +379,11 @@ class CursesApp() :
                 curses.init_pair(i+1, 255, i)
             else :
                 curses.init_pair(i+1, 0, i)
-        i = 0
+        i = 1
         for y in range(17):
             for x in range(15):
                 for suby in range(1):
-                    self.mainwin.addstr(y*2, x*6, '.'+str(i)+('.'*(4-len(str(i)))), curses.color_pair(i))
+                    self.mainwin.addstr(y*2, x*6, '.'+str(i)+('.'*(4-len(str(i)))), curses.color_pair(i-1))
                 i += 1
         self.mainwin.refresh()
 
@@ -364,7 +403,7 @@ class CursesApp() :
             self.message('Invalid input')
             return
 
-        self.COLORS.append((c1,c2))
+        self.COLORS.append((c1-1,c2-1))
         self.set_colorpairs()
 
     def delete_card(self):
@@ -408,6 +447,86 @@ class CursesApp() :
         if self.YNquestion('Are you sure about deleting this category ?', default=False) :
             shutil.rmtree(self.DECKROOT+'/'+user_input)
             self.CATEGORIES.remove(user_input)
+
+    def delete_color(self, args):
+        if args == '' :
+            self.colordisplay()
+            args = self.bottom_input('Select one color to delete')
+
+        try:
+            args = int(args)
+        except:
+            self.message(f'Input not recognised "{args}"')
+            return
+
+        del self.COLORS[args-1]
+
+        for tag in self.TAGS.keys() :
+            if self.TAGS[tag] == args :
+                self.TAGS[tag] = 1
+            elif self.TAGS[tag] > args :
+                self.TAGS[tag] -= 1
+
+        self.set_colorpairs()
+        self.colordisplay()
+
+    def edit_tag_name(self, args):
+        tag2edit = args.split(' ')[0]
+        newname = args[len(args.split(' ')[0])+1:].split(' ')[0]
+
+        if tag2edit == '':
+            tagkeys = list(self.TAGS.keys())
+            tag2edit = self.list_choice(tagkeys, 'Chose a tag to edit the name')
+            if tag2edit in self.ESCAPE : return
+            if type(tag2edit) == int :
+                tag2edit = tagkeys[tag2edit]
+
+        if newname == '':
+            newname = self.bottom_input('Chose a new name for tag "'+tag2edit+'"')
+            if newname in self.ESCAPE : return
+
+        current = Card(self.DECKROOT)
+        for category in self.CATEGORIES :
+            for card in os.listdir(self.DECKROOT+'/'+category) :
+                self.log(card)
+                current.open(self.DECKROOT+'/'+category+'/'+card)
+                if tag2edit in current.tags :
+                    current.tags.remove(tag2edit)
+                    current.tags.append(newname)
+                    self.log(str(current.tags))
+                current.save()
+
+        self.TAGS[newname] = self.TAGS[tag2edit]
+        del self.TAGS[tag2edit]
+
+    def edit_tag_color(self, args):
+        tag2edit = args.split(' ')[0]
+        newcolor = args[len(args.split(' ')[0])+1:].split(' ')[0]
+        try:
+            newcolor = int(newcolor)
+        except:
+            newcolor = ''
+
+        if tag2edit == '':
+            tagkeys = list(self.TAGS.keys())
+            tag2edit = self.list_choice(tagkeys, 'Chose a tag to edit the name')
+            if tag2edit in self.ESCAPE : return
+            if type(tag2edit) == int :
+                tag2edit = tagkeys[tag2edit]
+
+        if newcolor == '':
+            self.colordisplay()
+            newcolor = self.bottom_input('Chose a new color for tag "'+tag2edit+'"')
+            if newcolor in self.ESCAPE : return
+            try :
+                newcolor = int(newcolor)
+            except :
+                self.mainwin.clear()
+                self.mainwin.refresh()
+                self.message('Invalid input')
+                return
+
+        self.TAGS[tag2edit] = newcolor
 
     def add_note(self, args=''):
         if args == '' :
@@ -707,7 +826,6 @@ class CursesApp() :
 
     def set_colorpairs(self):
         for i,pair in enumerate(self.COLORS) :
-            self.log(f'set color pair : {i+1}, {pair[0]}, {pair[1]}')
             curses.init_pair(i+1, pair[0], pair[1])
 
     def colordisplay(self, args=None):
@@ -722,6 +840,7 @@ class CursesApp() :
                     return
 
     def refresh_all(self, args=None):
+        self.set_colorpairs()
         self.screen.refresh()
         self.mainwin.refresh()
         self.messagewin.refresh()
@@ -735,3 +854,42 @@ class CursesApp() :
     def clear_logs(self):
         with open(self.DECKROOT + '/logs.txt', 'w') as file:
             file.write('Logs cttrpg : ' + str(datetime.now()).split(' ')[0] + '\n')
+
+    def list_choice(self, list, message):
+        self.mainwin.erase()
+
+        y = 2
+        x = 2
+        maxlen = 5
+        i = 1
+        for line in list :
+            self.mainwin.addstr(y,x, str(i)+'. '+line)
+            i += 1
+            y += 1
+            if len(line) + 3 > maxlen : maxlen = len(line)+3
+            if y > self.screenH - 2 :
+                y = 2
+                x += maxlen+2
+        self.mainwin.refresh()
+
+        user_input = self.bottom_input(message)
+        if user_input in self.ESCAPE :
+            self.mainwin.erase()
+            self.mainwin.refresh()
+            return None
+        if user_input in list :
+            self.mainwin.erase()
+            self.mainwin.refresh()
+            return list.index(user_input)
+
+        try :
+            user_input = int(user_input)
+        except :
+            self.message('Input not recognised')
+            self.mainwin.erase()
+            self.mainwin.refresh()
+            return None
+
+        self.mainwin.erase()
+        self.mainwin.refresh()
+        return user_input - 1
