@@ -52,8 +52,10 @@ Escape commands are `quit`, `q`, `exit` and will exit the application or the dia
 | `<card name>`                     | No command is a shortcut for `open`. |
 | `new [card\|tag\|category\|color]`| Opens the dialog for creation. |
 | `delete [card\|tag\|category]`    | Opens the dialog for deletion |
+| `edit tag [name\|color\|both]`    | Edits a tag name, color or both. |
 | `list [tag\|category]`            | Lists all the cards available to be opened ordered by tag or category, category by default.|
-| `show <card tag or category name>`| Not implemented yet |
+| `show <card tag or category name>`| Shows the cards under a category or tag. |
+| `roll xdy+z`                      | Gives the result of a dice roll following the formula x dices with y faces plus z. |
 | `colors`                          | Shows the available colors. |
 | `debug`                           | Displays informations about the application. |
 | `reload`                          | Reloads the deck's configuration file. |
