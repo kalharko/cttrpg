@@ -55,10 +55,12 @@ class CursesApp() :
             'note':self.add_note,
             'edit':self.edit,
             'reload':self.reload,
+            'show':self.show,
 
             'ls':self.list,
             'rm':self.remove,
             'del':self.delete,
+            'sh':self.show,
 
             'quit':self.quit,
             'q':self.quit,
@@ -148,13 +150,19 @@ class CursesApp() :
             return
         if args == '' :
             args = self.bottom_input('Remove what ?  [note | tag]')
+            if args in self.ESCAPE : return
+
+        pass_on_args = args[len(args.split(' ')[0])+1:]
+        args = args.split(' ')[0]
 
         if args.split(' ')[0] == 'tag' :
-            self.remove_tag()
+            self.remove_tag(pass_on_args)
         elif args.split(' ')[0] == 'note' :
-            self.remove_note()
+            self.remove_note(pass_on_args)
         else :
             return
+        self.CURRENT.save()
+        self.updatePad()
 
     def list(self, args=None):
         if args in ['', 'category', 'cat']:
@@ -217,6 +225,39 @@ class CursesApp() :
         data.load_configuration(self)
         self.set_colorpairs()
         self.refresh_all()
+
+    def show(self, args=None):
+        if args == '':
+            args = self.bottom_input('Show what ?  [tag_name|category_name]')
+            if args in self.ESCAPE : return
+
+        if args in self.CATEGORIES :
+            self.mainwin.erase()
+            self.mainwin.addstr(1,1, args.upper(), curses.A_BOLD)
+            y = 3
+            for card in os.listdir(self.DECKROOT+'/'+args) :
+                self.mainwin.addstr(y, 3, card[:-4])
+                y += 2
+            self.mainwin.refresh()
+
+        elif args in self.TAGS :
+            self.mainwin.erase()
+            self.mainwin.addstr(1,1, args.upper(), curses.A_BOLD)
+            y = 3
+            current = Card(self.DECKROOT)
+            for category in self.CATEGORIES :
+                for card in os.listdir(self.DECKROOT+'/'+category) :
+                    current.open(self.DECKROOT+'/'+category+'/'+card)
+                    if args in current.tags :
+                        self.mainwin.addstr(y, 3, current.name)
+                        y += 2
+            self.mainwin.refresh()
+
+        else :
+            return
+
+
+
 
 
     ####################
@@ -477,9 +518,8 @@ class CursesApp() :
         if tag2edit == '':
             tagkeys = list(self.TAGS.keys())
             tag2edit = self.list_choice(tagkeys, 'Chose a tag to edit the name')
-            if tag2edit in self.ESCAPE : return
-            if type(tag2edit) == int :
-                tag2edit = tagkeys[tag2edit]
+            if user_input == None : return
+            tag2edit = tagkeys[tag2edit]
 
         if newname == '':
             newname = self.bottom_input('Chose a new name for tag "'+tag2edit+'"')
@@ -510,9 +550,8 @@ class CursesApp() :
         if tag2edit == '':
             tagkeys = list(self.TAGS.keys())
             tag2edit = self.list_choice(tagkeys, 'Chose a tag to edit the name')
-            if tag2edit in self.ESCAPE : return
-            if type(tag2edit) == int :
-                tag2edit = tagkeys[tag2edit]
+            if user_input == None : return
+            tag2edit = tagkeys[tag2edit]
 
         if newcolor == '':
             self.colordisplay()
@@ -550,49 +589,29 @@ class CursesApp() :
                 self.CURRENT.tags.append(tag)
         self.updatePad()
 
-    def remove_note(self):
-        self.mainwin.erase()
-        for i,line in enumerate(self.CURRENT.notes) :
-            line = f'{i+1}  ' + line
-            if len(line) > self.screenW-self.padW :
-                line = line [:self.screenW-self.padW-3] + '...'
-            self.mainwin.addstr(3+i*2,1, line)
-        self.mainwin.refresh()
+    def remove_note(self, args=''):
+        try :
+            args = int(args)
+            if 0 < args and args <= len(self.CURRENT.notes) :
+                del self.CURRENT.notes[args-1]
+                return
+        except :
+            pass
 
-        user_input = self.bottom_input('Choose note to remove')
-        try:
-            user_input = int(user_input)
-        except:
-            self.message('Invalid Input, action canceled')
-        if user_input < 1 or user_input > len(self.CURRENT.notes):
-            self.message('Invalid Input, action canceled')
+        user_input = self.list_choice(self.CURRENT.notes, 'Chose a note to remove')
+        if user_input == None : return
 
-        del self.CURRENT.notes[user_input-1]
-        self.mainwin.erase()
-        self.mainwin.refresh()
-        self.updatePad()
+        del self.CURRENT.notes[user_input]
 
-    def remove_tag(self):
-        self.mainwin.erase()
-        for i,line in enumerate(self.CURRENT.tags) :
-            line = f'{i+1}  ' + line
-            if len(line) > self.screenW-self.padW :
-                line = line [:self.screenW-self.padW-3] + '...'
-            self.mainwin.addstr(3+i*2,1, line)
-        self.mainwin.refresh()
+    def remove_tag(self, args=''):
+        if args in self.CURRENT.tags :
+            self.CURRENT.tags.remove(args)
+            return
 
-        user_input = self.bottom_input('Choose tag to remove')
-        try:
-            user_input = int(user_input)
-        except:
-            self.message('Invalid Input, action canceled')
-        if user_input < 1 or user_input > len(self.CURRENT.tags):
-            self.message('Invalid Input, action canceled')
+        user_input = self.list_choice(self.CURRENT.tags, 'Chose a tag to remove')
+        if user_input == None : return
 
-        del self.CURRENT.tags[user_input-1]
-        self.mainwin.erase()
-        self.mainwin.refresh()
-        self.updatePad()
+        del self.CURRENT.tags[user_input]
 
 
     ####################################
@@ -885,6 +904,12 @@ class CursesApp() :
         try :
             user_input = int(user_input)
         except :
+            self.message('Input not recognised')
+            self.mainwin.erase()
+            self.mainwin.refresh()
+            return None
+
+        if user_input < 1 or user_input > len(list) :
             self.message('Input not recognised')
             self.mainwin.erase()
             self.mainwin.refresh()
