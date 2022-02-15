@@ -1,4 +1,4 @@
-import curses, os, shutil, locale
+import curses, os, shutil, locale, random
 from curses.textpad import Textbox, rectangle
 from datetime import datetime
 
@@ -56,6 +56,7 @@ class CursesApp() :
             'edit':self.edit,
             'reload':self.reload,
             'show':self.show,
+            'roll':self.roll,
 
             'ls':self.list,
             'rm':self.remove,
@@ -256,6 +257,36 @@ class CursesApp() :
         else :
             return
 
+    def roll(self, args=None):
+        if args == '':
+            args = self.bottom_input('Roll what ?  x d y + z, xyz integers')
+            if args in self.ESCAPE : return
+
+        x = args.split('d')[0]
+        y = args.split('d')[1].split('+')[0]
+        if '+' in args :
+            z = args.split('+')[-1]
+
+        try :
+            x = int(x)
+            y = int(y)
+            if '+' in args :
+                z = int(z)
+        except :
+            self.message('Invalid Input')
+            return
+
+        rolls = [random.randrange(1,y+1) for i in range(x)]
+        message = 'Result : ' + str(rolls)
+        if '+' in args :
+            message += '+' + str(z)
+        message +=' = '
+        if '+' in args :
+            message += str(sum(rolls)+z)
+        else :
+            message += str(sum(rolls))
+
+        self.message(message)
 
 
 
@@ -674,9 +705,9 @@ class CursesApp() :
             return default
 
     def message(self, message):
-        message = '['+message+']'
         self.messagewin.hline(0,len(message), curses.ACS_HLINE, self.screenW-self.padW)
         self.messagewin.addstr(0,0, message)
+        self.messagewin.addch(0,len(message), curses.ACS_LTEE)
         self.messagewin.refresh()
 
     def main_input(self, og_content):
