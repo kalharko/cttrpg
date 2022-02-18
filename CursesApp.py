@@ -182,14 +182,18 @@ class CursesApp() :
     def edit(self, args=None):
         self.CURRENT.save()
 
-        if self.CURRENT.name == '' or self.CURRENT.name == None:
-            return
         if args == '' :
             args = self.bottom_input('Edit what ?  [name|subtitle|description|tag]')
             if args in self.ESCAPE : return
 
         pass_on_args = args[len(args.split(' ')[0])+1:]
         args = args.split(' ')[0]
+
+
+        if ((self.CURRENT.name == '' or self.CURRENT.name == None)
+            and args in ['name', 'subtitle', 'sub', 'description', 'desc']):
+            self.message("A card need to be opened to edit it's " + args )
+            return
 
         if args == 'name' :
             newname = self.main_input(self.CURRENT.name).split('\n')[0]
@@ -200,7 +204,7 @@ class CursesApp() :
             self.CURRENT.save()
         elif args in ['subtitle', 'sub']:
             self.CURRENT.subtitle = self.main_input(self.CURRENT.subtitle).split('\n')[0]
-        elif args == 'description' :
+        elif args in ['description', 'desc'] :
             self.CURRENT.description = self.main_input(self.CURRENT.description)
         elif args == 'tag' :
             user_input = pass_on_args.split(' ')[0]
@@ -448,9 +452,9 @@ class CursesApp() :
 
         for i in range(255):
             if i in [0, 16, 17, 52, 232, 233, 234, 235] :
-                curses.init_pair(i+1, 255, i)
+                curses.init_pair(i+1, 255, i+1)
             else :
-                curses.init_pair(i+1, 0, i)
+                curses.init_pair(i+1, 0, i+1)
         i = 1
         for y in range(17):
             for x in range(15):
