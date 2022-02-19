@@ -30,6 +30,7 @@ class CursesApp() :
         self.messagewin.hline(0,0, curses.ACS_HLINE ,self.screenW-self.padW)
         self.messagewin.refresh()
 
+        curses.init_pair(1, 0,255)
         if not self.deck_selection() : return
         self.CURRENT = Card(self.DECKROOT)
 
@@ -671,10 +672,15 @@ class CursesApp() :
                         self.bottomwin.erase()
                 elif newchar == 260 : #left arrow
                     pos_cursor = pos_cursor - 1 if pos_cursor > 0 else 0
+                    self.bottomwin.erase()
                 elif newchar == 261 : #right arrow
                     pos_cursor = pos_cursor + 1 if pos_cursor < len(out) else pos_cursor
-                elif newchar in [258, 259] : # up and down arrows
-                    pass
+                elif newchar == 258 : # down arrow
+                    pos_cursor = len(out)
+                    self.bottomwin.erase()
+                elif newchar == 259 : # up arrow
+                    pos_cursor = 0
+                    self.bottomwin.erase()
                 else :
                     with open('log.txt', 'a') as file :
                         file.write(str(type(newchar)) + '     ' + str(newchar) + '\n')
@@ -683,8 +689,11 @@ class CursesApp() :
                 pos_cursor += 1
 
             self.bottomwin.addstr(0, 0, out[:pos_cursor])
-            self.bottomwin.addch(0, pos_cursor, '_')
-            self.bottomwin.addstr(0, pos_cursor+1, out[pos_cursor:])
+            if pos_cursor == len(out) :
+                self.bottomwin.addch(0,pos_cursor, ' ', curses.color_pair(1))
+            else :
+                self.bottomwin.addch(0, pos_cursor, out[pos_cursor], curses.color_pair(1))
+            self.bottomwin.addstr(0, pos_cursor+1, out[pos_cursor+1:])
             self.bottomwin.refresh()
             newchar = self.screen.get_wch()
 
@@ -730,7 +739,7 @@ class CursesApp() :
                 self.mainwin.addstr(i+1,1, line)
             else :
                 self.mainwin.addstr(i+1,1, line[:x])
-                self.mainwin.addch(i+1, x+1, '_')
+                self.mainwin.addch(i+1, x+1, ' ', curses.color_pair(1))
                 self.mainwin.addstr(i+1, x+2, line[x:])
         self.mainwin.refresh()
         self.message('Type "~" to exit editing mode')
@@ -750,15 +759,31 @@ class CursesApp() :
                             lines.remove(None)
                             y -= 1
                 elif newchar == 260 : #left arrow
-                    x = x - 1 if x > 0 else 0
+                    if x == 0 :
+                        if y != 0 :
+                            y -= 1
+                            x = len(lines[y])
+                    else :
+                        x = x - 1 if x > 0 else 0
                 elif newchar == 261 : #right arrow
-                    x = x + 1 if x < len(lines[y]) else x
-                elif newchar == 259 : # up and down arrows
-                    y = y - 1 if y > 0 else 0
-                    x = x if x < len(lines[y]) else len(lines[y])
-                elif newchar == 258 :
-                    y = y + 1 if y < len(lines)-1 else y
-                    x = x if x < len(lines[y]) else len(lines[y])
+                    if x == len(lines[y]) :
+                        if y != len(lines)-1 :
+                            x = 0
+                            y += 1
+                    else :
+                        x = x + 1 if x < len(lines[y]) else x
+                elif newchar == 259 : # up arrow
+                    if y == 0 :
+                        x = 0
+                    else :
+                        y = y - 1
+                        x = x if x < len(lines[y]) else len(lines[y])
+                elif newchar == 258 : #down arrow
+                    if y == len(lines)-1 :
+                        x = len(lines[y])
+                    else :
+                        y = y + 1
+                        x = x if x < len(lines[y]) else len(lines[y])
                 else :
                     with open('log.txt', 'a') as file :
                         file.write(str(type(newchar)) + '     ' + str(newchar) + '\n')
@@ -788,8 +813,11 @@ class CursesApp() :
                     self.mainwin.addstr(i+1,1, line)
                 else :
                     self.mainwin.addstr(i+1,1, line[:x])
-                    self.mainwin.addch(i+1, x+1, '_')
-                    self.mainwin.addstr(i+1, x+2, line[x:])
+                    if x == len(line) :
+                        self.mainwin.addch(i+1,x+1, ' ', curses.color_pair(1))
+                    else :
+                        self.mainwin.addch(i+1, x+1, line[x], curses.color_pair(1))
+                    self.mainwin.addstr(i+1, x+2, line[x+1:])
             self.mainwin.refresh()
 
             newchar = self.screen.get_wch()
