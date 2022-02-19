@@ -400,7 +400,7 @@ class CursesApp() :
         # name
         user_input = self.bottom_input('Name')
         if user_input in self.ESCAPE : return
-        if not user_input in self.NAMES and not user_input.lower() in self.NAMES_lower():
+        if not user_input in self.NAMES and not user_input.lower() in self.NAMES_lower:
             self.CURRENT.name = user_input
         self.updatePad()
         # subtitle

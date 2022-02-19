@@ -20,7 +20,7 @@ Screenshot of the result of the `list` command with a card opened.
 - Dice roll
 - Random (encounter, loot, spell, poison ...) tables
 - Hypertext references between cards
-- Not case sensitive tags and categories
+- No case sensitive tags and categories
 
 
 ## Dependencies
