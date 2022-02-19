@@ -87,10 +87,15 @@ class CursesApp() :
     def open(self, args=None):
         self.CURRENT.save()
 
-        for category in self.CATEGORIES:
-            if args+'.txt' in os.listdir(self.DECKROOT +'/'+ category) :
-                self.CURRENT.set_as_new()
-                self.CURRENT.open(self.DECKROOT +'/'+ category+'/'+args)
+        if args.lower() in self.NAMES_lower :
+            name = self.NAMES[self.NAMES_lower.index(args.lower())]
+            self.log(name)
+            for cat in self.CATEGORIES :
+                if name+'.txt' in os.listdir(self.DECKROOT+'/'+cat) :
+                    category = cat
+                    break
+            self.CURRENT.set_as_new()
+            self.CURRENT.open(self.DECKROOT +'/'+ category+'/'+name)
 
         self.updatePad()
 
@@ -200,7 +205,9 @@ class CursesApp() :
             newname = self.main_input(self.CURRENT.name).split('\n')[0]
             os.remove(self.DECKROOT+'/'+self.CURRENT.category+'/'+self.CURRENT.name+'.txt')
             self.NAMES.remove(self.CURRENT.name)
+            self.NAMES_lower.remove(self.CURRENT.name.lower())
             self.NAMES.append(newname)
+            self.NAMES_lower.append(newname.lower())
             self.CURRENT.name = newname
             self.CURRENT.save()
         elif args in ['subtitle', 'sub']:
@@ -393,7 +400,7 @@ class CursesApp() :
         # name
         user_input = self.bottom_input('Name')
         if user_input in self.ESCAPE : return
-        if not user_input in self.NAMES :
+        if not user_input in self.NAMES and not user_input.lower() in self.NAMES_lower():
             self.CURRENT.name = user_input
         self.updatePad()
         # subtitle
@@ -484,7 +491,7 @@ class CursesApp() :
         self.set_colorpairs()
 
     def delete_card(self):
-        user_input = self.bottom_input('Name of card to delete')
+        user_input = self.bottom_input('Name of card to delete [Case sensitive]')
         if user_input in self.ESCAPE : return
         if not user_input in self.NAMES :
             self.message('Card "'+user_input+'" not found')
@@ -495,6 +502,7 @@ class CursesApp() :
                 break
         os.remove(self.DECKROOT+'/'+category+'/'+user_input+'.txt')
         self.NAMES.remove(user_input)
+        self.NAMES_lower.remove(user_input.lower())
 
     def delete_tag(self):
         user_input = self.bottom_input('Name of tag to delete')
@@ -887,6 +895,7 @@ class CursesApp() :
         to_display = [
             "Categories: " + str(self.CATEGORIES),
             "Names:      " + str(self.NAMES),
+            "Names_lower " + str(self.NAMES_lower),
             "Tags:       " + str(self.TAGS),
             "",
             "screenH,W:  " + str(self.screenH) + ", " + str(self.screenW),

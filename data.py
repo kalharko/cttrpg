@@ -38,9 +38,11 @@ def load_configuration(obj):
 
     # names
     obj.NAMES = []
+    obj.NAMES_lower = []
     for cat in obj.CATEGORIES :
         for name in os.listdir(obj.DECKROOT+'/'+cat) :
             obj.NAMES.append(name[:-4])
+            obj.NAMES_lower.append(name[:-4].lower())
 
 def save_configuration(obj):
     out = '#Configuration file for cttrpg\n#can be edited here or in the cttrpg program\n\n'
